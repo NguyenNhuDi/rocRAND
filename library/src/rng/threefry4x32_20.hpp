@@ -68,7 +68,7 @@ struct threefry4x32_20_device_engine : public ::rocrand_device::threefry4x32_20_
 };
 
 template<class T, class Distribution>
-ROCRAND_KERNEL __launch_bounds__(ROCRAND_DEFAULT_MAX_BLOCK_SIZE) void generate_kernel(
+__device__ __host__ __forceinline__ void generate_kernel(
     threefry4x32_20_device_engine engine, T* data, const size_t n, Distribution distribution)
 {
     constexpr unsigned int input_width  = Distribution::input_width;
@@ -171,6 +171,14 @@ ROCRAND_KERNEL __launch_bounds__(ROCRAND_DEFAULT_MAX_BLOCK_SIZE) void generate_k
     }
 }
 
+template<class T, class Distribution>
+ROCRAND_KERNEL __launch_bounds__(ROCRAND_DEFAULT_MAX_BLOCK_SIZE) void wrapper(
+    threefry4x32_20_device_engine engine, T* data, const size_t n, Distribution distribution
+){
+    generate_kernel(engine, data, n, distribution);
+}
+
+
 } // end namespace detail
 } // end namespace rocrand_host
 
@@ -229,7 +237,7 @@ public:
         if(status != ROCRAND_STATUS_SUCCESS)
             return status;
 
-        hipLaunchKernelGGL(HIP_KERNEL_NAME(rocrand_host::detail::generate_kernel),
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(rocrand_host::detail::wrapper),
                            dim3(s_blocks),
                            dim3(s_threads),
                            0,
