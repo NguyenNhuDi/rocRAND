@@ -25,6 +25,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <unistd.h>
 
 #include "cmdparser.hpp"
 
@@ -102,6 +103,8 @@ void run_benchmark(const cli::Parser&    parser,
         ROCRAND_CHECK(generate_func(generator, data, size));
     }
     HIP_CHECK(hipDeviceSynchronize());
+
+    usleep(1000);
 
     // Measurement
     hipEvent_t start, stop;
