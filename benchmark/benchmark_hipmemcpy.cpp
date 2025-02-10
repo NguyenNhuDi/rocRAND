@@ -137,8 +137,6 @@ int main(int argc, char ** argv){
 
     std::vector<benchmark::internal::Benchmark*> benchmarks = {};
 
-    // for(size_t i = 1; i < 100000; i *= 10){
-
     populate_benchmark<unsigned int>(benchmarks);
     populate_benchmark<int>(benchmarks);
     populate_benchmark<unsigned char>(benchmarks);
@@ -148,8 +146,6 @@ int main(int argc, char ** argv){
     populate_benchmark<__half>(benchmarks);
     populate_benchmark<float>(benchmarks);
     populate_benchmark<double>(benchmarks);
-
-    
 
     for(auto& b : benchmarks)
     {
