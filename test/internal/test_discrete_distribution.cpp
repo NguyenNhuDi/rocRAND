@@ -69,9 +69,6 @@ struct run_discrete_distribution_tests{
     }
 
     void runTest(const size_t inputSize){
-        T maxi = std::numeric_limits<T>::max();
-        T mini = std::numeric_limits<T>::min();
-
         T * hInput = new T[inputSize];
         T * dInput;
 
@@ -84,14 +81,19 @@ struct run_discrete_distribution_tests{
         std::random_device                          rd;
         std::mt19937                                gen(rd());
         
-
+        // If unsigned long is passed into the uniform distribution, it will cause
+        // memory access faults
         if(std::is_same<T, unsigned long>::value){
+            unsigned int maxi = std::numeric_limits<unsigned int>::max();
+            unsigned int mini = std::numeric_limits<unsigned int>::min();
             std::uniform_int_distribution<unsigned int> dis(mini, maxi);
 
             for(size_t i = 0; i < inputSize; i++)
                 hInput[i] = dis(gen);
         }
         else{
+            T maxi = std::numeric_limits<T>::max();
+            T mini = std::numeric_limits<T>::min();
             std::uniform_int_distribution<T> dis(mini, maxi);
 
             for(size_t i = 0; i < inputSize; i++)
@@ -108,7 +110,7 @@ struct run_discrete_distribution_tests{
             rocrand_discrete_distribution discrete_distribution;
             HIP_CHECK(rocrand_create_discrete_distribution(prob.data(), prob.size(), 0, &discrete_distribution));
             
-            size_t threads = 1024;
+            size_t threads = 512;
             size_t blocks = std::ceil(static_cast<double>(inputSize) / static_cast<double>(threads));
             
             hipLaunchKernelGGL(
