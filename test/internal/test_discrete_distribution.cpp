@@ -68,7 +68,8 @@ struct run_discrete_distribution_tests{
         }      
     }
 
-    void runTest(const size_t inputSize){
+    template<kernelType KT>
+    void run_test_with_numeric_input(const size_t inputSize, KT f){
         T * hInput = new T[inputSize];
         T * dInput;
 
@@ -114,7 +115,7 @@ struct run_discrete_distribution_tests{
             size_t blocks = std::ceil(static_cast<double>(inputSize) / static_cast<double>(threads));
             
             hipLaunchKernelGGL(
-                HIP_KERNEL_NAME(discrete_alias_kernel<T>),
+                HIP_KERNEL_NAME(f<T>),
                 dim3(blocks),
                 dim3(threads),
                 0,
@@ -141,6 +142,10 @@ struct run_discrete_distribution_tests{
 
         HIP_CHECK(hipFree(dInput));
         HIP_CHECK(hipFree(dOutput));
+    }
+
+    void run_discrete_alias_test(const size_t inputSize){
+        run_test_with_numeric_input<discrete_alias_kernel>(inputSize, discrete_alias_kernel);
     }
 
 };
