@@ -189,13 +189,13 @@ struct FourOutUD{
         double eMean = 0.5 * (0 + 1); // 0.5(a + b)
         double eStd = (1 - 0) / (2 * std::sqrt(3)); // (b - a) / (2*3^0.5)
     
-        ASSERT_NEAR(mean, eMean, eMean * 0.2) << "Expected Mean: " << eMean << " Actual Mean: " << mean << " Eps: " << eMean * 0.2;
-        ASSERT_NEAR(std, eStd, eStd * 0.2) << "Expected Std: " << eStd << " Actual Std: " << std << " Eps: " << eStd * 0.2;
+        ASSERT_NEAR(mean, eMean, eMean * 0.1) << "Expected Mean: " << eMean << " Actual Mean: " << mean << " Eps: " << eMean * 0.1;
+        ASSERT_NEAR(std, eStd, eStd * 0.1) << "Expected Std: " << eStd << " Actual Std: " << std << " Eps: " << eStd * 0.1;
     }
 
 };
 
-TEST(uniform_distribution_tests, uint4_test){
+TEST(uniform_distribution_tests, float4_uint4_in_test){
     unsigned int mini = 0;
     unsigned int maxi = std::numeric_limits<unsigned int>::max();
     std::uniform_int_distribution<unsigned int> dis(mini, maxi);
@@ -209,7 +209,7 @@ TEST(uniform_distribution_tests, uint4_test){
     );
 }
 
-TEST(uniform_distribution_tests, ulonglong4_test){
+TEST(uniform_distribution_tests, float4_ulonglong4_test){
     unsigned long long mini = 0;
     unsigned long long maxi = std::numeric_limits<unsigned long long>::max();
     std::uniform_int_distribution<unsigned long long> dis(mini, maxi);
@@ -219,6 +219,38 @@ TEST(uniform_distribution_tests, ulonglong4_test){
         dis,
         [] __host__ __device__ (ulonglong4 & input, float4 & output){
             output = rocrand_device::detail::uniform_distribution4(input);
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, double4_uint4_test){
+    unsigned int mini = 0;
+    unsigned int maxi = std::numeric_limits<unsigned int>::max();
+    std::uniform_int_distribution<unsigned int> dis(mini, maxi);
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    
+    FourOutUD<double4, uint4, std::uniform_int_distribution<unsigned int>> test;
+    test.run_test(
+        dis,
+        [&] __host__ __device__ (uint4 & input, double4 & output){
+            uint4 temp = {dis(gen), dis(gen), dis(gen), dis(gen)};
+            output = rocrand_device::detail::uniform_distribution_double4(temp, input);
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, double4_ulonglong4_test){
+    unsigned long long mini = 0;
+    unsigned long long maxi = std::numeric_limits<unsigned long long>::max();
+    std::uniform_int_distribution<unsigned long long> dis(mini, maxi);
+
+    FourOutUD<double4, ulonglong4, std::uniform_int_distribution<unsigned long long>> test;
+    test.run_test(
+        dis,
+        [] __host__ __device__ (ulonglong4 & input, double4 & output){
+            output = rocrand_device::detail::uniform_distribution_double4(input);
         }
     );
 }
