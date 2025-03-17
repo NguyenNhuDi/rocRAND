@@ -28,6 +28,7 @@
 #include <rocrand/rocrand_mtgp32_11213.h>
 
 #define HIP_CHECK(state) ASSERT_EQ(state, hipSuccess)
+#define TEST_SIZE 1000000
 
 template <typename T>
 __global__ void discrete_alias_kernel(unsigned int * output, T * input, rocrand_discrete_distribution_st &dis,  const size_t N){
@@ -124,7 +125,6 @@ struct run_discrete_distribution_tests{
                 hInput[i] = dis(gen);
         }
         
-
         HIP_CHECK(hipMemcpy(dInput, hInput, sizeof(T) * inputSize, hipMemcpyHostToDevice));
 
         for(size_t i = 0; i < totalSize; i++){
@@ -197,7 +197,6 @@ struct run_discrete_distribution_tests{
             },
             inputSize
         );
-    
     }
         
 };
@@ -251,17 +250,17 @@ TEST(discrete_distribution_tests, discrete_alias_basic){
 
 TEST(discrete_distribution_tests, discrete_alias_unsigned_int){
     run_discrete_distribution_tests<unsigned int> rt;
-    rt.run_alias_test(1000000);
+    rt.run_alias_test(TEST_SIZE);
 }
 
 TEST(discrete_distribution_tests, discrete_alias_unsigned_long){
     run_discrete_distribution_tests<unsigned long> rt;
-    rt.run_alias_test(1000000);
+    rt.run_alias_test(TEST_SIZE);
 }
 
 TEST(discrete_distribution_tests, discrete_alias_unsigned_long_long){
     run_discrete_distribution_tests<unsigned long long> rt;
-    rt.run_alias_test(1000000);
+    rt.run_alias_test(TEST_SIZE);
 }
 
 TEST(discrete_distribution_tests, discrete_cdf_basic){
@@ -313,16 +312,15 @@ TEST(discrete_distribution_tests, discrete_cdf_basic){
 
 TEST(discrete_distribution_tests, discrete_cdf_unsigned_int){
     run_discrete_distribution_tests<unsigned int> rt;
-    rt.run_cdf_test(1000000);
+    rt.run_cdf_test(TEST_SIZE);
 }
 
 TEST(discrete_distribution_tests, discrete_cdf_unsigned_long){
     run_discrete_distribution_tests<unsigned long> rt;
-    rt.run_cdf_test(1000000);
+    rt.run_cdf_test(TEST_SIZE);
 }
-
 
 TEST(discrete_distribution_tests, discrete_cdf_unsigned_long_long){
     run_discrete_distribution_tests<unsigned long long> rt;
-    rt.run_cdf_test(1000000);
+    rt.run_cdf_test(TEST_SIZE);
 }
