@@ -52,23 +52,33 @@ __global__ void discrete_cdf_kernel(unsigned int * output, T * input, rocrand_di
 template <typename T>
 struct run_discrete_distribution_tests{
     std::vector<std::vector<double>> allProbabilities;
-    std::vector<std::vector<double>> cdfProbabilities;
     std::vector<size_t> sizes;
     size_t totalSize;
 
 
-    run_discrete_distribution_tests(std::vector<std::vector<T>> aProb){
+    run_discrete_distribution_tests(){
+        // From top to bottom:
+        /**
+         * discrete uniform
+         * discrete normal (6 sided dice roll)
+         * discrete poisson (lambda = 10)
+         * discrete log normal (mean = 1, std = 5)
+         */
+        std::vector<std::vector<T>> aProb = {
+            {10, 10, 10, 10},
+            {1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1},
+            {1234, 1677, 1519, 1032, 561, 254, 98, 33, 10, 2},
+            {1, 2, 8, 4, 3, 2, 1}
+        };
+
         this->totalSize = aProb.size();
 
         this->allProbabilities.assign(this->totalSize, std::vector<double>());
-        this->cdfProbabilities.assign(this->totalSize, std::vector<double>());
         this->sizes.assign(this->totalSize, 0);
-
 
         for(size_t i = 0; i < this->totalSize; i++){
             this->sizes[i] = aProb[i].size();
             this->allProbabilities[i].assign(this->sizes[i], 0);
-            this->cdfProbabilities[i].assign(this->sizes[i], 0);
             
             T sum = 0;
 
@@ -78,17 +88,11 @@ struct run_discrete_distribution_tests{
             double dSum = static_cast<double>(sum);
             for(size_t ii = 0; ii < this->sizes[i]; ii++)
                 this->allProbabilities[i][ii] = static_cast<double>(aProb[i][ii]) / dSum; 
-                
-            for(size_t ii = 0; ii < this->sizes[i]; ii++){
-                if(ii == 0)
-                    this->cdfProbabilities[i][0] = this->allProbabilities[i][ii];
-                else
-                    this->cdfProbabilities[i][ii] = this->allProbabilities[i][ii] + this->cdfProbabilities[i][ii - 1];
-            }
         }      
     }
-
-    void run_alias_test(const size_t inputSize){
+    
+    template<typename KernelCallFunc>
+    void runTestInternal(const KernelCallFunc & kcf, const size_t inputSize){
         T * hInput = new T[inputSize];
         T * dInput;
 
@@ -129,21 +133,9 @@ struct run_discrete_distribution_tests{
 
             rocrand_discrete_distribution discrete_distribution;
             HIP_CHECK(rocrand_create_discrete_distribution(prob.data(), prob.size(), 0, &discrete_distribution));
-            
-            size_t threads = 512;
-            size_t blocks = std::ceil(static_cast<double>(inputSize) / static_cast<double>(threads));
-            
-            hipLaunchKernelGGL(
-                HIP_KERNEL_NAME(discrete_alias_kernel<T>),
-                dim3(blocks),
-                dim3(threads),
-                0,
-                0,
-                dOutput,
-                dInput,
-                *discrete_distribution,
-                inputSize
-            );
+
+            kcf(dOutput, dInput, *discrete_distribution, inputSize);
+
             HIP_CHECK(hipMemcpy(hOutput, dOutput, sizeof(unsigned int) * inputSize, hipMemcpyDeviceToHost));
 
             std::vector<double> count(N, 0);
@@ -161,89 +153,53 @@ struct run_discrete_distribution_tests{
 
         HIP_CHECK(hipFree(dInput));
         HIP_CHECK(hipFree(dOutput));
+    
+    }
+
+    void run_alias_test(const size_t inputSize){
+        runTestInternal(
+            [] __host__ __device__ (unsigned int * output, T * input, rocrand_discrete_distribution_st &dis,  const size_t N){
+                size_t threads = 512;
+                size_t blocks = std::ceil(static_cast<double>(N) / static_cast<double>(threads));
+                hipLaunchKernelGGL(
+                    HIP_KERNEL_NAME(discrete_alias_kernel<T>),
+                    dim3(blocks),
+                    dim3(threads),
+                    0,
+                    0,
+                    output,
+                    input,
+                    dis,
+                    N
+                );
+            },
+            inputSize
+        );
+    
     }
 
     void run_cdf_test(const size_t inputSize){
-        T * hInput = new T[inputSize];
-        T * dInput;
-
-        unsigned int * hOutput = new unsigned int [inputSize];
-        unsigned int * dOutput;
-        
-        HIP_CHECK(hipMalloc(&dInput, sizeof(T) * inputSize));
-        HIP_CHECK(hipMalloc(&dOutput, sizeof(unsigned int) * inputSize));
-
-        std::random_device                          rd;
-        std::mt19937                                gen(rd());
-        
-        // If unsigned long is passed into the uniform distribution, it will cause
-        // memory access faults
-        if(std::is_same<T, unsigned long>::value){
-            unsigned int maxi = std::numeric_limits<unsigned int>::max();
-            unsigned int mini = std::numeric_limits<unsigned int>::min();
-            std::uniform_int_distribution<unsigned int> dis(mini, maxi);
-
-            for(size_t i = 0; i < inputSize; i++)
-                hInput[i] = dis(gen);
-        }
-        else{
-            T maxi = std::numeric_limits<T>::max();
-            T mini = std::numeric_limits<T>::min();
-            std::uniform_int_distribution<T> dis(mini, maxi);
-
-            for(size_t i = 0; i < inputSize; i++)
-                hInput[i] = dis(gen);
-        }
-        
-
-        HIP_CHECK(hipMemcpy(dInput, hInput, sizeof(T) * inputSize, hipMemcpyHostToDevice));
-
-        for(size_t i = 0; i < totalSize; i++){
-            std::vector<double> & prob = allProbabilities[i];
-            std::vector<double> & cProb = cdfProbabilities[i];
-            size_t N = sizes[i];
-            std::vector<double> expectedProb(N, 0);
-
-            expectedProb[0] =cProb[0];
-            for(size_t i = 1; i < N; i++)
-                expectedProb[i] = cProb[i] - cProb[i - 1];
-            
-            rocrand_discrete_distribution discrete_distribution;
-            HIP_CHECK(rocrand_create_discrete_distribution(prob.data(), prob.size(), 0, &discrete_distribution));
-            
-            size_t threads = 512;
-            size_t blocks = std::ceil(static_cast<double>(inputSize) / static_cast<double>(threads));
-            
-            hipLaunchKernelGGL(
-                HIP_KERNEL_NAME(discrete_cdf_kernel<T>),
-                dim3(blocks),
-                dim3(threads),
-                0,
-                0,
-                dOutput,
-                dInput,
-                *discrete_distribution,
-                inputSize
-            );
-            HIP_CHECK(hipMemcpy(hOutput, dOutput, sizeof(unsigned int) * inputSize, hipMemcpyDeviceToHost));
-
-            std::vector<double> count(N, 0);
-            for(size_t j = 0; j < inputSize; j++)
-                count[hOutput[j]]++;
-
-            for(size_t j = 0; j < N; j++){
-                double res = count[j] / static_cast<double>(inputSize);
-                double eps = (expectedProb[j] >= 0.05) ? expectedProb[j] * 0.2 : 1e-2; // within 20% if the probability is at least 5%, within 0.01 otherwise
-                ASSERT_NEAR(res, expectedProb[j], eps) << "Difference: " << std::abs(res - expectedProb[j]) << " Epsilon: " << eps << std::endl;
-            }
-            
-            HIP_CHECK(rocrand_destroy_discrete_distribution(discrete_distribution));
-        }
-
-        HIP_CHECK(hipFree(dInput));
-        HIP_CHECK(hipFree(dOutput));
+        runTestInternal(
+            [] __host__ __device__ (unsigned int * output, T * input, rocrand_discrete_distribution_st &dis,  const size_t N){
+                size_t threads = 512;
+                size_t blocks = std::ceil(static_cast<double>(N) / static_cast<double>(threads));
+                hipLaunchKernelGGL(
+                    HIP_KERNEL_NAME(discrete_cdf_kernel<T>),
+                    dim3(blocks),
+                    dim3(threads),
+                    0,
+                    0,
+                    output,
+                    input,
+                    dis,
+                    N
+                );
+            },
+            inputSize
+        );
+    
     }
-
+        
 };
 
 TEST(discrete_distribution_tests, discrete_alias_basic){
@@ -293,31 +249,18 @@ TEST(discrete_distribution_tests, discrete_alias_basic){
 
 }   
 
-// From top to bottom:
-/**
- * discrete uniform
- * discrete normal (6 sided dice roll)
- * discrete poisson (lambda = 10)
- * discrete log normal (mean = 1, std = 5)
- */
-#define construct_discrete_test(x)    run_discrete_distribution_tests<x> rt({\
-    {10, 10, 10, 10},\
-    {1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1},\
-    {1234, 1677, 1519, 1032, 561, 254, 98, 33, 10, 2},\
-    {1, 2, 8, 4, 3, 2, 1}});
-
 TEST(discrete_distribution_tests, discrete_alias_unsigned_int){
-    construct_discrete_test(unsigned int)
+    run_discrete_distribution_tests<unsigned int> rt;
     rt.run_alias_test(1000000);
 }
 
 TEST(discrete_distribution_tests, discrete_alias_unsigned_long){
-    construct_discrete_test(unsigned long)
+    run_discrete_distribution_tests<unsigned long> rt;
     rt.run_alias_test(1000000);
 }
 
 TEST(discrete_distribution_tests, discrete_alias_unsigned_long_long){
-    construct_discrete_test(unsigned long long)
+    run_discrete_distribution_tests<unsigned long long> rt;
     rt.run_alias_test(1000000);
 }
 
@@ -369,17 +312,17 @@ TEST(discrete_distribution_tests, discrete_cdf_basic){
 }
 
 TEST(discrete_distribution_tests, discrete_cdf_unsigned_int){
-    construct_discrete_test(unsigned int)
+    run_discrete_distribution_tests<unsigned int> rt;
     rt.run_cdf_test(1000000);
 }
 
 TEST(discrete_distribution_tests, discrete_cdf_unsigned_long){
-    construct_discrete_test(unsigned long)
+    run_discrete_distribution_tests<unsigned long> rt;
     rt.run_cdf_test(1000000);
 }
 
 
 TEST(discrete_distribution_tests, discrete_cdf_unsigned_long_long){
-    construct_discrete_test(unsigned long long)
+    run_discrete_distribution_tests<unsigned long long> rt;
     rt.run_cdf_test(1000000);
 }
