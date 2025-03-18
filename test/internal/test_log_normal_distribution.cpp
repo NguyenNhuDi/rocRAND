@@ -403,11 +403,245 @@ TYPED_TEST(sobol_log_normal_distribution_tests, half_test)
         std += std::pow(__half2float(val[i]) - mean, 2);
     }
     std = std::sqrt(std / size);
-
+    
     float expected_mean = std::exp(0.2f + 0.5f * 0.5f / 2);
     float expected_std
-        = std::sqrt((std::exp(0.5f * 0.5f) - 1.0) * std::exp(2 * 0.2f + 0.5f * 0.5f));
-
+    = std::sqrt((std::exp(0.5f * 0.5f) - 1.0) * std::exp(2 * 0.2f + 0.5f * 0.5f));
+    
     EXPECT_NEAR(expected_mean, mean, expected_mean * 0.1f);
     EXPECT_NEAR(expected_std, std, expected_std * 0.1f);
+}
+
+
+template <typename OutType>
+struct StatesLND{
+    template <typename FuncCall>
+    void run_test(const FuncCall & f, size_t testSize = 4000000){
+        double iMean = 0;
+        double iStd = 1;
+
+        float * output = new float [testSize];
+        OutType out;
+    
+        double mean = 0;
+    
+        for(size_t i = 0; i <= testSize; i += 4){
+            f(out, iMean, iStd);
+    
+            output[i] = out.w;
+            output[i + 1] = out.x;
+            output[i + 2] = out.y;
+            output[i + 3] = out.z;
+            mean += out.w + out.x + out.y + out.z;
+        }
+    
+        mean /= testSize;
+    
+        double std = 0.0;
+        for(size_t i = 0; i < testSize; i++)
+            std += std::pow(output[i] - mean, 2);
+    
+        std = std::sqrt(std / testSize);
+    
+        double eMean = std::exp(iMean + (iStd * iStd) / 2);
+        double eStd = std::sqrt(std::log(1 + (iStd * iStd)/(iMean * iMean)));
+        ASSERT_NEAR(mean, eMean, eMean * 0.1) << "Expected Mean: " << eMean << " Actual Mean: " << mean << " Eps: " << eMean * 0.1;
+        ASSERT_NEAR(std, eStd, eStd * 0.1) << "Expected Std: " << eStd << " Actual Std: " << std << " Eps: " << eStd * 0.1;
+    }
+};
+
+TEST(log_normal_distribution_tests, philox4x32_10_test){
+    rocrand_state_philox4x32_10 states;
+    rocrand_init(123456, 654321, 0, &states);
+
+    StatesLND<float4> testFloat;
+    StatesLND<double4> testDouble;
+
+    #ifndef ROCRAND_DETAIL_BM_NOT_IN_STATE
+        testFloat.run_test()(
+            [&] __host__ __device__ (float4 & output, float mean, float std){
+                output = {
+                    rocrand_log_normal(&states, mean, std), rocrand_log_normal(&states, mean, std),
+                    rocrand_log_normal(&states, mean, std), rocrand_log_normal(&states, mean, std)
+                };
+        )
+        testDouble.run_test()(
+            [&] __host__ __device__ (double4 & output, double mean, double std){
+                output = {
+                    rocrand_log_normal_double(&states, mean, std), rocrand_log_normal_double(&states, mean, std),
+                    rocrand_log_normal_double(&states, mean, std), rocrand_log_normal_double(&states, mean, std)
+                };
+            } 
+        )
+    #endif // ROCRAND_DETAIL_BM_NOT_IN_STATE
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output, float mean, float std){
+            float2 o1 = rocrand_log_normal2(&states, mean, std);
+            float2 o2 = rocrand_log_normal2(&states, mean, std);
+            output = {
+                o1.x, o2.x, o1.y, o2.y
+            };
+        }
+    );
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output, float mean, float std){
+            output = rocrand_log_normal4(&states, mean, std);
+        }
+    );
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output, double mean, double std){
+            double2 o1 = rocrand_log_normal_double2(&states, mean, std);
+            double2 o2 = rocrand_log_normal_double2(&states, mean, std);
+            output = {
+                o1.x, o2.x, o1.y, o2.y
+            };
+        }
+    );
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output, double mean, double std){
+            output = rocrand_log_normal_double4(&states, mean, std);
+        }
+    );
+}
+
+TEST(log_normal_distribution_tests, mrg31k3p_test){
+    rocrand_state_mrg31k3p states;
+    rocrand_init(123456, 654321, 0, &states);
+
+    StatesLND<float4> testFloat;
+    StatesLND<double4> testDouble;
+
+    #ifndef ROCRAND_DETAIL_BM_NOT_IN_STATE
+        testFloat.run_test()(
+            [&] __host__ __device__ (float4 & output, float mean, float std){
+                output = {
+                    rocrand_log_normal(&states, mean, std), rocrand_log_normal(&states, mean, std),
+                    rocrand_log_normal(&states, mean, std), rocrand_log_normal(&states, mean, std)
+                };
+        )
+        testDouble.run_test()(
+            [&] __host__ __device__ (double4 & output, double mean, double std){
+                output = {
+                    rocrand_log_normal_double(&states, mean, std), rocrand_log_normal_double(&states, mean, std),
+                    rocrand_log_normal_double(&states, mean, std), rocrand_log_normal_double(&states, mean, std)
+                };
+            } 
+        )
+    #endif // ROCRAND_DETAIL_BM_NOT_IN_STATE
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output, float mean, float std){
+            float2 o1 = rocrand_log_normal2(&states, mean, std);
+            float2 o2 = rocrand_log_normal2(&states, mean, std);
+            output = {
+                o1.x, o2.x, o1.y, o2.y
+            };
+        }
+    );
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output, double mean, double std){
+            double2 o1 = rocrand_log_normal_double2(&states, mean, std);
+            double2 o2 = rocrand_log_normal_double2(&states, mean, std);
+            output = {
+                o1.x, o2.x, o1.y, o2.y
+            };
+        }
+    );
+}
+
+TEST(log_normal_distribution_tests, mrg32k3a_test){
+    rocrand_state_mrg32k3a states;
+    rocrand_init(123456, 654321, 0, &states);
+
+    StatesLND<float4> testFloat;
+    StatesLND<double4> testDouble;
+
+    #ifndef ROCRAND_DETAIL_BM_NOT_IN_STATE
+        testFloat.run_test()(
+            [&] __host__ __device__ (float4 & output, float mean, float std){
+                output = {
+                    rocrand_log_normal(&states, mean, std), rocrand_log_normal(&states, mean, std),
+                    rocrand_log_normal(&states, mean, std), rocrand_log_normal(&states, mean, std)
+                };
+        )
+        testDouble.run_test()(
+            [&] __host__ __device__ (double4 & output, double mean, double std){
+                output = {
+                    rocrand_log_normal_double(&states, mean, std), rocrand_log_normal_double(&states, mean, std),
+                    rocrand_log_normal_double(&states, mean, std), rocrand_log_normal_double(&states, mean, std)
+                };
+            } 
+        )
+    #endif // ROCRAND_DETAIL_BM_NOT_IN_STATE
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output, float mean, float std){
+            float2 o1 = rocrand_log_normal2(&states, mean, std);
+            float2 o2 = rocrand_log_normal2(&states, mean, std);
+            output = {
+                o1.x, o2.x, o1.y, o2.y
+            };
+        }
+    );
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output, double mean, double std){
+            double2 o1 = rocrand_log_normal_double2(&states, mean, std);
+            double2 o2 = rocrand_log_normal_double2(&states, mean, std);
+            output = {
+                o1.x, o2.x, o1.y, o2.y
+            };
+        }
+    );
+}
+
+TEST(log_normal_distribution_tests, xorwow_test){
+    rocrand_state_xorwow states;
+    rocrand_init(123456, 654321, 0, &states);
+
+    StatesLND<float4> testFloat;
+    StatesLND<double4> testDouble;
+
+    #ifndef ROCRAND_DETAIL_BM_NOT_IN_STATE
+        testFloat.run_test()(
+            [&] __host__ __device__ (float4 & output, float mean, float std){
+                output = {
+                    rocrand_log_normal(&states, mean, std), rocrand_log_normal(&states, mean, std),
+                    rocrand_log_normal(&states, mean, std), rocrand_log_normal(&states, mean, std)
+                };
+        )
+        testDouble.run_test()(
+            [&] __host__ __device__ (double4 & output, double mean, double std){
+                output = {
+                    rocrand_log_normal_double(&states, mean, std), rocrand_log_normal_double(&states, mean, std),
+                    rocrand_log_normal_double(&states, mean, std), rocrand_log_normal_double(&states, mean, std)
+                };
+            } 
+        )
+    #endif // ROCRAND_DETAIL_BM_NOT_IN_STATE
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output, float mean, float std){
+            float2 o1 = rocrand_log_normal2(&states, mean, std);
+            float2 o2 = rocrand_log_normal2(&states, mean, std);
+            output = {
+                o1.x, o2.x, o1.y, o2.y
+            };
+        }
+    );
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output, double mean, double std){
+            double2 o1 = rocrand_log_normal_double2(&states, mean, std);
+            double2 o2 = rocrand_log_normal_double2(&states, mean, std);
+            output = {
+                o1.x, o2.x, o1.y, o2.y
+            };
+        }
+    );
 }
