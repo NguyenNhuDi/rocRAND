@@ -788,3 +788,254 @@ TEST(uniform_distribution_tests, mtgp32_test){
     delete [] fhOut;
     delete [] dhOut;
 }
+
+TEST(uniform_distribution_tests, sobol32_test){
+    rocrand_state_sobol32 states;
+    const unsigned int* directions;
+    HIP_CHECK(rocrand_get_direction_vectors32(&directions, ROCRAND_DIRECTION_VECTORS_32_JOEKUO6));
+    rocrand_init(directions, 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, scrambled_sobol32_test){
+    rocrand_state_scrambled_sobol32 states;
+    const unsigned int* directions;
+    HIP_CHECK(rocrand_get_direction_vectors32(&directions, ROCRAND_DIRECTION_VECTORS_32_JOEKUO6));
+    rocrand_init(directions, 123456, 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, sobol64_test){
+    rocrand_state_sobol64 states;
+    const unsigned long long* directions;
+    HIP_CHECK(rocrand_get_direction_vectors64(&directions, ROCRAND_DIRECTION_VECTORS_64_JOEKUO6));
+    rocrand_init(directions, 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, scrambled_sobol64_test){
+    rocrand_state_scrambled_sobol64 states;
+    const unsigned long long* directions;
+    HIP_CHECK(rocrand_get_direction_vectors64(&directions, ROCRAND_DIRECTION_VECTORS_64_JOEKUO6));
+    rocrand_init(directions, 123456, 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, lfsr113_test){
+    rocrand_state_lfsr113 states;
+    rocrand_init(static_cast<uint4>(12), 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, threefry2x32_20_test){
+    rocrand_state_threefry2x32_20 states;
+    rocrand_init(123456, 654321, 0, & states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, threefry2x64_20_test){
+    rocrand_state_threefry2x64_20 states;
+    rocrand_init(123456, 654321, 0, & states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, threefry4x32_20_test){
+    rocrand_state_threefry4x32_20 states;
+    rocrand_init(123456, 654321, 0, & states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, threefry4x64_20_test){
+    rocrand_state_threefry4x64_20 states;
+    rocrand_init(123456, 654321, 0, & states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
