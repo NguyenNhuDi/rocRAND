@@ -24,6 +24,9 @@
 #include <random>
 
 #include <rng/distribution/uniform.hpp>
+#include <rocrand/rocrand_mtgp32_11213.h>
+
+#define HIP_CHECK(state) ASSERT_EQ(state, hipSuccess)
 
 using namespace rocrand_impl::host;
 
@@ -539,5 +542,252 @@ TEST(uniform_distribution_tests, double2_ulonglong4_in_test){
             output.w = o1.x; output.x = o1.y;
             output.y = o2.x; output.z = o2.y;
         }
+    );
+}
+
+template <typename OutType>
+struct StatesUD{
+    template <typename FuncCall>
+    void run_test(const FuncCall & f, size_t testSize = 4000000){
+        float * output = new float [testSize];
+        OutType out;
+    
+        double mean = 0;
+    
+        for(size_t i = 0; i <= testSize; i += 4){
+            f(out);
+    
+            output[i] = out.w;
+            output[i + 1] = out.x;
+            output[i + 2] = out.y;
+            output[i + 3] = out.z;
+
+            ASSERT_GT(out.w, 0);
+            ASSERT_GT(out.x, 0);
+            ASSERT_GT(out.y, 0);
+            ASSERT_GT(out.z, 0);
+
+            ASSERT_LE(out.w, 1);
+            ASSERT_LE(out.x, 1);
+            ASSERT_LE(out.y, 1);
+            ASSERT_LE(out.z, 1);
+    
+            mean += out.w + out.x + out.y + out.z;
+        }
+    
+        mean /= testSize;
+    
+        double std = 0.0;
+        for(size_t i = 0; i < testSize; i++)
+            std += std::pow(output[i] - mean, 2);
+    
+        std = std::sqrt(std / testSize);
+    
+        double eMean = 0.5 * (0 + 1); // 0.5(a + b)
+        double eStd = (1 - 0) / (2 * std::sqrt(3)); // (b - a) / (2*3^0.5)
+    
+        ASSERT_NEAR(mean, eMean, eMean * 0.1) << "Expected Mean: " << eMean << " Actual Mean: " << mean << " Eps: " << eMean * 0.1;
+        ASSERT_NEAR(std, eStd, eStd * 0.1) << "Expected Std: " << eStd << " Actual Std: " << std << " Eps: " << eStd * 0.1;
+    }
+};
+
+TEST(uniform_distribution_tests, philox4x32_10_test){
+    rocrand_state_philox4x32_10 states;
+    rocrand_init(123456, 654321, 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            float2 o1 = rocrand_uniform2(&states);
+            float2 o2 = rocrand_uniform2(&states);
+
+            output.w = o1.x; output.x = o1.y;
+            output.y = o2.x; output.z = o2.y;
+        }
+    );
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = rocrand_uniform4(&states);
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            double2 o1 = rocrand_uniform_double2(&states);
+            double2 o2 = rocrand_uniform_double2(&states);
+
+            output.w = o1.x; output.x = o1.y;
+            output.y = o2.x; output.z = o2.y;
+        }
+    );
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = rocrand_uniform_double4(&states);
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, mrg31k3p_test){
+    rocrand_state_mrg31k3p states;
+    rocrand_init(123456, 654321, 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, mrg32k3a_test){
+    rocrand_state_mrg32k3a states;
+    rocrand_init(123456, 654321, 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+TEST(uniform_distribution_tests, xorwow_test){
+    rocrand_state_xorwow states;
+    rocrand_init(123456, 654321, 0, &states);
+
+    StatesUD<float4> testFloat;
+
+    testFloat.run_test(
+        [&] __host__ __device__ (float4 & output){
+            output = {
+                rocrand_uniform(&states), rocrand_uniform(&states), 
+                rocrand_uniform(&states), rocrand_uniform(&states)
+            };
+        }
+    );
+
+    StatesUD<double4> testDouble;
+
+    testDouble.run_test(
+        [&] __host__ __device__ (double4 & output){
+            output = {
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states), 
+                rocrand_uniform_double(&states), rocrand_uniform_double(&states)
+            };
+        }
+    );
+}
+
+__global__ void mtgp32_kernel (rocrand_state_mtgp32 * states, float * output, const size_t N){
+    auto bIdx = blockIdx.x, tIdx = threadIdx.x, bSize = blockDim.x;
+    auto idx = bIdx * bSize + tIdx;
+
+    if(idx >= N) 
+        return;
+
+    output[idx] = rocrand_uniform_double(states);
+}
+
+__global__ void mtgp32_kernel (rocrand_state_mtgp32 * states, double * output, const size_t N){
+    auto bIdx = blockIdx.x, tIdx = threadIdx.x, bSize = blockDim.x;
+    auto idx = bIdx * bSize + tIdx;
+
+    if(idx >= N) 
+        return;
+
+    output[idx] = rocrand_uniform_double(states);
+}
+
+TEST(uniform_distribution_tests, mtgp32_test){
+    rocrand_state_mtgp32 * states;
+    auto state_size = 100, seed = 654321;
+    HIP_CHECK(hipMalloc(&states, state_size * sizeof(rocrand_state_mtgp32)));
+    rocrand_make_state_mtgp32(states,  mtgp32dc_params_fast_11213, state_size, seed);
+
+    StatesUD<float4> testFloat;
+    float * fhOut = new float[4];
+    float * fdOut;
+    HIP_CHECK(hipMalloc(&fdOut, sizeof(float) * 4));
+
+    testFloat.run_test(
+        [&] (float4 & output){
+
+            mtgp32_kernel<<<1, 4>>>(states, fdOut, 4);
+            HIP_CHECK(hipMemcpy(fhOut, fdOut, sizeof(float) * 4, hipMemcpyDeviceToHost));
+            output = {
+                fhOut[0], fhOut[1], fhOut[3], fhOut[4]
+            };
+        },
+        40000
+    );
+
+    StatesUD<double4> testDouble;
+    double * dhOut = new double[4];
+    double * ddOut;
+    HIP_CHECK(hipMalloc(&ddOut, sizeof(double) * 4));
+
+    testDouble.run_test(
+        [&] (double4 & output){
+
+            mtgp32_kernel<<<1, 4>>>(states, ddOut, 4);
+            HIP_CHECK(hipMemcpy(dhOut, ddOut, sizeof(double) * 4, hipMemcpyDeviceToHost));
+            output = {
+                dhOut[0], dhOut[1], dhOut[3], dhOut[4]
+            };
+        },
+        40000
     );
 }
