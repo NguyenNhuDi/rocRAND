@@ -731,24 +731,14 @@ TEST(uniform_distribution_tests, xorwow_test){
     );
 }
 
-__global__ void mtgp32_kernel (rocrand_state_mtgp32 * states, float * output, const size_t N){
-    auto bIdx = blockIdx.x, tIdx = threadIdx.x, bSize = blockDim.x;
-    auto idx = bIdx * bSize + tIdx;
-
-    if(idx >= N) 
-        return;
-
-    output[idx] = rocrand_uniform_double(states);
+__global__ void mtgp32_kernel (rocrand_state_mtgp32 * states, float * output){
+    for(size_t i = 0; i < 4; i++)
+        output[i] = rocrand_uniform_double(states);
 }
 
-__global__ void mtgp32_kernel (rocrand_state_mtgp32 * states, double * output, const size_t N){
-    auto bIdx = blockIdx.x, tIdx = threadIdx.x, bSize = blockDim.x;
-    auto idx = bIdx * bSize + tIdx;
-
-    if(idx >= N) 
-        return;
-
-    output[idx] = rocrand_uniform_double(states);
+__global__ void mtgp32_kernel (rocrand_state_mtgp32 * states, double * output){
+    for(size_t i = 0; i < 4; i++)
+        output[i] = rocrand_uniform_double(states);
 }
 
 TEST(uniform_distribution_tests, mtgp32_test){
@@ -765,7 +755,7 @@ TEST(uniform_distribution_tests, mtgp32_test){
     testFloat.run_test(
         [&] (float4 & output){
 
-            mtgp32_kernel<<<1, 4>>>(states, fdOut, 4);
+            mtgp32_kernel<<<1, 1>>>(states, fdOut);
             HIP_CHECK(hipMemcpy(fhOut, fdOut, sizeof(float) * 4, hipMemcpyDeviceToHost));
             output = {
                 fhOut[0], fhOut[1], fhOut[3], fhOut[4]
@@ -782,7 +772,7 @@ TEST(uniform_distribution_tests, mtgp32_test){
     testDouble.run_test(
         [&] (double4 & output){
 
-            mtgp32_kernel<<<1, 4>>>(states, ddOut, 4);
+            mtgp32_kernel<<<1, 1>>>(states, ddOut);
             HIP_CHECK(hipMemcpy(dhOut, ddOut, sizeof(double) * 4, hipMemcpyDeviceToHost));
             output = {
                 dhOut[0], dhOut[1], dhOut[3], dhOut[4]
