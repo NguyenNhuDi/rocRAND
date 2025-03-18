@@ -790,4 +790,11 @@ TEST(uniform_distribution_tests, mtgp32_test){
         },
         40000
     );
+
+    HIP_CHECK(hipFree(states));
+    HIP_CHECK(hipFree(fdOut));
+    HIP_CHECK(hipFree(ddOut));
+
+    delete [] fhOut;
+    delete [] dhOut;
 }
