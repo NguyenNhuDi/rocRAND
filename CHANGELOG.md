@@ -8,6 +8,7 @@ Documentation for rocRAND is available at
 ### Added
 
 * gfx950 support
+* Additional unit tests for `test_log_normal_distribution.cpp`
 * Additional unit tests for `test_normal_distribution.cpp`
 * Additional unit tests for `test_uniform_distribution.cpp`
 * New unit tests for `include/rocrand/rocrand_discrete.h` in `test_discrete_distribution.cpp`
