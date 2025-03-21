@@ -169,3 +169,47 @@ TEST(threefry_prng_state_tests, discard_sequence_test)
     EXPECT_EQ(state.counter.y, 457ULL);
     EXPECT_EQ(state.substate, 0U);
 }
+
+TEST(threefry_additional_tests, rocrand_init_test)
+{
+    // making sure the outputs are the same when initialized with same parameters
+    rocrand_state_threefry2x64_20 state1, state2;
+
+    using ull = unsigned long long;
+
+    ull seeds[] = {0, 123, 321, 123456, 654321};
+    ull subsequences[] = {0xf, 0xff, 0x1f, 0x1ff, 0x1f1};
+    ull offsets[] = {0, 1, 2, 3, 4};
+
+    for(int i = 0; i < 5; i++){
+        rocrand_init(seeds[i], subsequences[i], offsets[i], &state1);
+        rocrand_init(seeds[i], subsequences[i], offsets[i], &state2);
+
+        for(int j = 0; j < 5000; j++)
+            ASSERT_EQ(rocrand(&state1), rocrand(&state2));
+    }
+}
+
+TEST(threefry_additional_tests, rocrand_rocrand_2_test)
+{
+    // making sure the outputs are the same when initialized with same parameters
+    rocrand_state_threefry2x64_20 state1, state2;
+
+    using ull = unsigned long long;
+
+    ull seeds[] = {0, 123, 321, 123456, 654321};
+    ull subsequences[] = {0xf, 0xff, 0x1f, 0x1ff, 0x1f1};
+    ull offsets[] = {0, 1, 2, 3, 4};
+
+    for(int i = 0; i < 5; i++){
+        rocrand_init(seeds[i], subsequences[i], offsets[i], &state1);
+        rocrand_init(seeds[i], subsequences[i], offsets[i], &state2);
+
+        for(int j = 0; j < 8000; j += 2){
+                ull outOne[] = {rocrand(&state1), rocrand(&state1)};
+                ulonglong2 outTwo = rocrand2(&state2);
+                ASSERT_EQ(outTwo.x, outOne[0]);
+                ASSERT_EQ(outTwo.y, outOne[1]);
+        }
+    }
+}
