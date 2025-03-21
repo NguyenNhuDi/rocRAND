@@ -11,6 +11,10 @@ Documentation for rocRAND is available at
 * Additional unit tests for `test_log_normal_distribution.cpp`
 * Additional unit tests for `test_normal_distribution.cpp`
 * Additional unit tests for `test_uniform_distribution.cpp`
+* Additional unit tests for `test_rocrand_threefry2x32_20_prng.cpp`
+* Additional unit tests for `test_rocrand_threefry2x64_20_prng.cpp`
+* Additional unit tests for `test_rocrand_threefry4x32_20_prng.cpp`
+* Additional unit tests for `test_rocrand_threefry4x64_20_prng.cpp`
 * New unit tests for `include/rocrand/rocrand_discrete.h` in `test_discrete_distribution.cpp`
 
 ### Changed
