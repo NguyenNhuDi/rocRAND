@@ -217,125 +217,125 @@ void run_poisson_test(
     HIP_CHECK(hipFree(device_state));
 }
 
-// TYPED_TEST(PoissonTest, poisson_distribution_small_lambda_test){
-//     using type = TestFixture::prng_type;
-//     run_poisson_test<type, unsigned int>(
-//         TestFixture::small_poisson_lambdas,
-//         [=] __host__ __device__ (type * state, const double lambda){
-//             return rocrand_device::detail::poisson_distribution_small(state, lambda);
-//         },
-//         [] (const unsigned int & x){
-//             return x;
-//         }
-//     );
-// }
+TYPED_TEST(PoissonTest, poisson_distribution_small_lambda_test){
+    using type = TestFixture::prng_type;
+    run_poisson_test<type, unsigned int>(
+        TestFixture::small_poisson_lambdas,
+        [=] __host__ __device__ (type * state, const double lambda){
+            return rocrand_device::detail::poisson_distribution_small(state, lambda);
+        },
+        [] (const unsigned int & x){
+            return x;
+        }
+    );
+}
 
-// TYPED_TEST(PoissonTest, poisson_distribution_large_lambda_test){
-//     using type = TestFixture::prng_type;
-//     run_poisson_test<type, unsigned int>(
-//         TestFixture::large_poisson_lambdas,
-//         [=] __host__ __device__ (type * state, const double lambda){
-//             return rocrand_device::detail::poisson_distribution_large(state, lambda);
-//         },
-//         [] (const unsigned int & x){
-//             return x;
-//         }
-//     );
-// }
+TYPED_TEST(PoissonTest, poisson_distribution_large_lambda_test){
+    using type = TestFixture::prng_type;
+    run_poisson_test<type, unsigned int>(
+        TestFixture::large_poisson_lambdas,
+        [=] __host__ __device__ (type * state, const double lambda){
+            return rocrand_device::detail::poisson_distribution_large(state, lambda);
+        },
+        [] (const unsigned int & x){
+            return x;
+        }
+    );
+}
 
-// TYPED_TEST(PoissonTest, poisson_distribution_huge_lambda_test){
-//     using type = TestFixture::prng_type;
-//     run_poisson_test<type, unsigned int>(
-//         TestFixture::massive_poisson_lambdas,
-//         [=] __host__ __device__ (type * state, const double lambda){
-//             return rocrand_device::detail::poisson_distribution_huge(state, lambda);
-//         },
-//         [] (const unsigned int & x){
-//             return x;
-//         }
-//     );
-// }
+TYPED_TEST(PoissonTest, poisson_distribution_huge_lambda_test){
+    using type = TestFixture::prng_type;
+    run_poisson_test<type, unsigned int>(
+        TestFixture::massive_poisson_lambdas,
+        [=] __host__ __device__ (type * state, const double lambda){
+            return rocrand_device::detail::poisson_distribution_huge(state, lambda);
+        },
+        [] (const unsigned int & x){
+            return x;
+        }
+    );
+}
 
-// TYPED_TEST(PoissonTest, poisson_distribution_test){
-//     using type = TestFixture::prng_type;
+TYPED_TEST(PoissonTest, poisson_distribution_test){
+    using type = TestFixture::prng_type;
 
-//     run_poisson_test<type, unsigned int>(
-//         TestFixture::small_poisson_lambdas,
-//         [=] __host__ __device__ (type * state, const double lambda){
-//             return rocrand_device::detail::poisson_distribution(state, lambda);
-//         },
-//         [] (const unsigned int & x){
-//             return x;
-//         }
-//     );
+    run_poisson_test<type, unsigned int>(
+        TestFixture::small_poisson_lambdas,
+        [=] __host__ __device__ (type * state, const double lambda){
+            return rocrand_device::detail::poisson_distribution(state, lambda);
+        },
+        [] (const unsigned int & x){
+            return x;
+        }
+    );
 
-//     run_poisson_test<type, unsigned int>(
-//         TestFixture::large_poisson_lambdas,
-//         [=] __host__ __device__ (type * state, const double lambda){
-//             return rocrand_device::detail::poisson_distribution(state, lambda);
-//         },
-//         [] (const unsigned int & x){
-//             return x;
-//         }
-//     );
+    run_poisson_test<type, unsigned int>(
+        TestFixture::large_poisson_lambdas,
+        [=] __host__ __device__ (type * state, const double lambda){
+            return rocrand_device::detail::poisson_distribution(state, lambda);
+        },
+        [] (const unsigned int & x){
+            return x;
+        }
+    );
 
-//     run_poisson_test<type, unsigned int>(
-//         TestFixture::massive_poisson_lambdas,
-//         [=] __host__ __device__ (type * state, const double lambda){
-//             return rocrand_device::detail::poisson_distribution(state, lambda);
-//         },
-//         [] (const unsigned int & x){
-//             return x;
-//         }
-//     );
-// }
+    run_poisson_test<type, unsigned int>(
+        TestFixture::massive_poisson_lambdas,
+        [=] __host__ __device__ (type * state, const double lambda){
+            return rocrand_device::detail::poisson_distribution(state, lambda);
+        },
+        [] (const unsigned int & x){
+            return x;
+        }
+    );
+}
 
-// TYPED_TEST(PoissonTest, poisson_distribution_inv_test){
-//     using type = TestFixture::prng_type;
+TYPED_TEST(PoissonTest, poisson_distribution_inv_test){
+    using type = TestFixture::prng_type;
 
-//     run_poisson_test<type, unsigned int>(
-//         TestFixture::small_poisson_lambdas,
-//         [=] __host__ __device__ (type * state, const double lambda){
-//             return rocrand_device::detail::poisson_distribution_inv(state, lambda);
-//         },
-//         [] (const unsigned int & x){
-//             return x;
-//         }
-//     );
-// }
+    run_poisson_test<type, unsigned int>(
+        TestFixture::small_poisson_lambdas,
+        [=] __host__ __device__ (type * state, const double lambda){
+            return rocrand_device::detail::poisson_distribution_inv(state, lambda);
+        },
+        [] (const unsigned int & x){
+            return x;
+        }
+    );
+}
 
-// // External Tests
-// TYPED_TEST(PoissonTest, external_rocrand_poisson){
-//     using type = TestFixture::prng_type;
+// External Tests
+TYPED_TEST(PoissonTest, external_rocrand_poisson){
+    using type = TestFixture::prng_type;
 
-//     // TODO: Figure out why higher lambda is hanging
-//     run_poisson_test<type, unsigned int>(
-//         TestFixture::small_poisson_lambdas,
-//         [=] __host__ __device__ (type * state, const double lambda){
-//             return rocrand_poisson(state, lambda);
-//         },
-//         [] (const unsigned int & x){
-//             return x;
-//         }
-//     );
-// }
+    // TODO: Figure out why higher lambda is hanging
+    run_poisson_test<type, unsigned int>(
+        TestFixture::small_poisson_lambdas,
+        [=] __host__ __device__ (type * state, const double lambda){
+            return rocrand_poisson(state, lambda);
+        },
+        [] (const unsigned int & x){
+            return x;
+        }
+    );
+}
 
-// // Special Tests 
-// TEST(PoissonTest, philox4x32_10_uint4_output){
-//     // Its a TEST so we do not have access to TestFixture
-//     std::vector<double> small_poisson_lambdas = {1, 2, 4, 8, 16, 32, 64};
+// Special Tests 
+TEST(PoissonTest, philox4x32_10_uint4_output){
+    // Its a TEST so we do not have access to TestFixture
+    std::vector<double> small_poisson_lambdas = {1, 2, 4, 8, 16, 32, 64};
 
-//     run_poisson_test<rocrand_state_philox4x32_10, uint4>(
-//         small_poisson_lambdas,
-//         [=] __host__ __device__ (rocrand_state_philox4x32_10 * state, const double lambda){
-//             return rocrand_poisson4(state, lambda);
-//         },
-//         [] (const uint4 & x){
-//             return (x.w + x.x + x.y + x.z);
-//         },
-//         4
-//     );
-// }
+    run_poisson_test<rocrand_state_philox4x32_10, uint4>(
+        small_poisson_lambdas,
+        [=] __host__ __device__ (rocrand_state_philox4x32_10 * state, const double lambda){
+            return rocrand_poisson4(state, lambda);
+        },
+        [] (const uint4 & x){
+            return (x.w + x.x + x.y + x.z);
+        },
+        4
+    );
+}
 
 template<size_t items_per_thread, size_t block_size>
 __global__ void mtgp32_poisson_kernel(rocrand_state_mtgp32 * states, unsigned int * device_output, const double & lambda){
